@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, type UseFormRegisterReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { LandImageField } from "@/features/onboarding/components/land-image-field";
 import { onboardingSteps } from "@/features/onboarding/constants";
 import {
   onboardingSchema,
@@ -47,11 +48,15 @@ export function OnboardingWizard({ projectId }: { projectId: string }) {
     handleSubmit,
     trigger,
     getValues,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<OnboardingValues>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: { ...defaultValues, ...draft },
   });
+
+  const landImage = watch("landImage");
 
   async function goNext() {
     const valid = await trigger(step.fields);
@@ -66,6 +71,17 @@ export function OnboardingWizard({ projectId }: { projectId: string }) {
     if (stepIndex < onboardingSteps.length - 1) {
       setStepIndex((current) => current + 1);
     }
+  }
+
+  async function handleFormSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (stepIndex < onboardingSteps.length - 1) {
+      await goNext();
+      return;
+    }
+
+    await handleSubmit(onSubmit)(event);
   }
 
   async function onSubmit(values: OnboardingValues) {
@@ -88,7 +104,7 @@ export function OnboardingWizard({ projectId }: { projectId: string }) {
   }
 
   return (
-    <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+    <form className="space-y-6" onSubmit={handleFormSubmit}>
       <Card>
         <CardHeader className="space-y-4">
           <div>
@@ -123,6 +139,13 @@ export function OnboardingWizard({ projectId }: { projectId: string }) {
                 options={["Less than 4 hours", "4 to 6 hours", "6 or more hours"]}
                 registration={register("sunlight")}
                 error={errors.sunlight?.message}
+              />
+              <LandImageField
+                value={landImage}
+                onChange={(image) =>
+                  setValue("landImage", image, { shouldDirty: true })
+                }
+                error={errors.landImage?.message}
               />
             </>
           ) : null}
@@ -238,7 +261,7 @@ export function OnboardingWizard({ projectId }: { projectId: string }) {
               {isSubmitting ? "Generating plan..." : "Generate farming plan"}
             </Button>
           ) : (
-            <Button type="button" onClick={goNext}>
+            <Button type="submit" disabled={saving || isSubmitting}>
               Save and continue
             </Button>
           )}
