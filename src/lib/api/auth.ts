@@ -56,7 +56,7 @@ async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
     return await fetch(url, init);
   } catch {
     throw new AuthApiError(
-      "Cannot reach the backend. Start the API on port 5000 and check NEXT_PUBLIC_API_URL in .env.local.",
+      "Cannot reach the backend. Make sure the API is running and that NEXT_PUBLIC_API_URL points to it.",
       0,
     );
   }
@@ -88,6 +88,13 @@ export async function register(body: RegisterBody): Promise<UserOut> {
       email: body.email,
       password: body.password,
     }),
+  });
+  return handleResponse<UserOut>(response);
+}
+
+export async function getMe(accessToken: string): Promise<UserOut> {
+  const response = await apiFetch(`${apiBaseUrl}/auth/me`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
   });
   return handleResponse<UserOut>(response);
 }

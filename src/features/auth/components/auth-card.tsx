@@ -16,9 +16,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AuthApiError, login } from "@/lib/api/auth";
+import { AuthApiError, getMe, login } from "@/lib/api/auth";
 import { setToken } from "@/lib/auth/token";
-import { marketplaceApi } from "@/features/marketplace/api";
 import {
   loginSchema,
   type LoginValues,
@@ -43,9 +42,8 @@ export function AuthCard({ mode }: { mode: "login" | "signup" | "forgot" }) {
     try {
       const token = await login(values);
       setToken(token.access_token);
-      const { user } = await marketplaceApi.me();
-      const role = user?.role?.toLowerCase() ?? "";
-      if (role === "buyer") {
+      const user = await getMe(token.access_token);
+      if (user.role.toLowerCase() === "buyer") {
         router.push("/marketplace-orders");
       } else {
         router.push("/dashboard");
@@ -63,7 +61,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" | "forgot" }) {
     mode === "login"
       ? "Welcome back"
       : mode === "signup"
-        ? "Create your AgriPilot account"
+        ? "Create your AgriPlus account"
         : "Reset your password";
 
   const description =
@@ -158,7 +156,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" | "forgot" }) {
 
           <div className="space-y-2 text-center text-sm text-muted-foreground">
             <p>
-              New to AgriPilot?{" "}
+              New to AgriPlus?{" "}
               <Link className="font-semibold text-primary" href="/signup">
                 Create an account
               </Link>
